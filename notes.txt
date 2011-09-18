@@ -1,0 +1,118 @@
+QUESTIONS
+
+* can you create a hidden canvas to draw upon, extract a portion and copy to a location on another canvas?
+* how will memory consumption be, since i'm going to be creating TONS of objects, with functions declared for each instantiation?
+
+IDEAS
+
+* staffs are 'pushy' in the Y direction, with other staffs
+* what about having children tell their parents how much space they need?
+
+TODO
+
+* notes are drawn "on top" (after) a staff, but dependent upon it
+* dynamics are drawn after notes, but also relative to staff variables
+	* multiple dependencies
+	* depending upon position: above/below/left/right
+
+FLOW
+
+- staff.draw()
+	- recurse to leaves, which set their necessary dimensions (if applicable)
+	- parents add up necessary dimensions?
+
+
+SCENARIOS
+
+empty staff
+	- should it have a default width?
+pushables
+	- they have a scheme ... 'above': would contact all parents, getting their positions, and ensuring it's always above the ancestors
+	- means the furthest descendents are above ... order matters
+
+
+CAN WE FIGURE OUT THE API BY USAGE SCENARIO?
+
+just easier to add notes to each voice separately ... maybe jj
+
+var staff1 = staff('treble', 4, 4); // treble clef in 4/4
+staff1.voices('snare-hihat', 'kick'); // note the order
+staff1.measure([
+	note('c1#', 'b1').voice('snare-hihat'), // simultaneous
+]);
+
+INTERNALLY
+
+{
+	staffs: [
+		{
+			clef: 'treble',
+			measures: [
+				[ // first measure
+					[4,4], // time signature change/specification
+					{
+						base: 16, // 16th note
+						// note names correspond to 'alignment hints' given by the staff
+						name: 'c1', // might be an array, right?
+						rest: false,
+						tie: true // ties to first "tie:false" note
+					},
+					{ // note inherits values before it for ease?
+						name: 'd1'
+						tie: false
+					},
+					{ rest: true },
+					{
+						name: 'd1'
+					},
+					'', // quick clear
+					{
+						base: 4,
+						name: 'd1'
+					}
+				],
+			]
+		}
+	]
+}
+
+- BAH, SCREW VOICES, NOT YET
+- voices need to share time-signatures, so each measure should have separate voice slots for notes
+{
+	staffs: [
+		{
+			clef: 'treble',
+			voices: ['snare', 'bass'],
+			measures: [
+				[4,4], // time signature
+				{
+					// can we know beforehand whether snare should be top voice?
+					// with bass below? does it matter?
+					snare: [
+						{
+							base: 16, // 16th note
+							name: 'c1', // might be an array, right?
+							rest: false,
+							tie: true // ties to first "tie:false" note
+						},
+						{ // note inherits values before it for ease?
+							name: 'd1'
+							tie: false
+						},
+						{ rest: true },
+						{
+							name: 'd1'
+						},
+						'', // quick clear
+						{
+							base: 4,
+							name: 'd1'
+						}
+					],
+					bass: [
+					]
+				}
+			]
+		}
+	]
+}
