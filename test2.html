@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- Load the Paper.js library -->
+<!--
+<script type="text/javascript" src="library/paper.js/dist/paper.js"></script>
+-->
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<script type="text/javascript" src="main.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+	var staff = Music.staff();
+	// how to add measures?
+	var measure = Music.measure({
+			showNumber: true,
+			voices: ['snare']
+		});
+	measure
+		.note(
+			Music.note({
+				name: 'c',
+				duration: 2, // eighth note
+				up: false
+			})
+		)
+		.note(
+			Music.note({
+				name: 'd',
+				duration: 2 // eighth note
+			})
+		);
+	staff.measure( measure );
+	staff.measure( measure );
+	
+	staff.draw();
+	
+/*
+	var staff = Music.staff('treble');
+	staff
+		// callback is invoked on measure object so you can add notes
+		.measure(
+			{
+				showNumber: true
+			},
+			// should be easy to write function to pass that will convert
+			function() {
+				this
+					.note({name:'c', duration:2})
+					.note({name:'c', duration:2})
+					.note({name:'d', duration:1})
+					.note({name:'c', duration:1})
+					.note({name:'b', duration:1});
+			}
+		);
+
+*/
+
+});
+</script>
+</head>
+<body>
+	<canvas id="myCanvas" resize></canvas>
+</body>
+</html>
+.note({name:'d', duration:2})
