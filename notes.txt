@@ -2,11 +2,20 @@ QUESTIONS
 
 * can you create a hidden canvas to draw upon, extract a portion and copy to a location on another canvas?
 * how will memory consumption be, since i'm going to be creating TONS of objects, with functions declared for each instantiation?
+* how to relay Y position to notes from staff down through measure?
+	- would rather staff not have to know about note names ... maybe measure could inherit that functionality somehow?
+	* should we explicitly have to add measures at all?
+		- makes it easier to have a voice be silent for a long duration
+		- might help with real-time editing, being able to update just the region of the canvas taken up by a measure
 
 IDEAS
 
+* separate placement and alignment from the rest of the music stuff
+* beaming rules, rather than having to explicitly specify beam options
+
 * staffs are 'pushy' in the Y direction, with other staffs
 * what about having children tell their parents how much space they need?
+- drawing levels/regions above or below the staff. staff gets to push them up or down depending on the notes present on the staff.
 
 TODO
 
@@ -20,6 +29,14 @@ FLOW
 - staff.draw()
 	- recurse to leaves, which set their necessary dimensions (if applicable)
 	- parents add up necessary dimensions?
+
+	- each object has a minimum region width: note has min-width
+		- starts as space needed to fit the font element (and the sharp, flag, grace note, etc)
+		- note has 2 child arrays, above and below (the staff)
+			- note gives the proper starting x/y for alignment with note, and so it doesn't overlap the staff
+	- each object sets minimums, then recurses into children, which may expand width or other properties
+	- stems and beams are relative to, but not children of, a note
+		- the note is in charge of telling this object where to begin drawing
 
 
 SCENARIOS
