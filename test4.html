@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<script type="text/javascript">
+/*
+Function.prototype.method = function(name, func) {
+	if (this.prototype[name]) {
+		console.error('Method already present');
+		return;
+	}
+	this.prototype[name] = func;
+	return this;
+};
+*/
+
+if (!Function.prototype.curry) {
+        Function.prototype.curry = function() {
+                var slice = Array.prototype.slice,
+                        args = slice.apply(arguments),
+                        that = this;
+                return function() {
+                        return that.apply(null, args.concat( slice.apply(arguments) ) );
+                };
+
+        };
+}
+
+
+Music = {
+	context: null
+};
+
+var Drawable = function(spec, my) {
+	var that = {}, // and other private inst vars;
+	my = my || {}
+	;
+	
+	// Need to implement this in each derived object
+	//that.draw = function(x, y) {
+	//};
+	
+	return that;
+};
+
+// Slots are an abstract way of calculating where to draw items relative to ourself
+var Slotted = function(spec, my) {
+	var that = {}, // and other private inst vars;
+	my = my || {},
+	slots = {}
+	;
+	
+	// Create slot
+	that.slot = function(name, f) {
+		slots[ name ] = f;
+	};
+	// Add object to slot
+	
+	
+	return that;
+};
+
+// These are Drawable
+
+var Stem = function(up, my) {
+	var that = {}, // and other private inst vars;
+	my = my || Drawable(),
+	direction = (up > 0 ? 1 : -1);
+	
+	that.draw = function(x,y) {
+		var ctx = Music.context;
+		
+		ctx.fillRect(x, y, 1, -30 * direction);
+	};
+	
+	return that;
+};
+
+// Also, notes will need a direction too ... to left or right of stem
+// Hmm
+var Note = function(spec, my) {
+	/*
+	spec = {
+		duration: 1, // is whole note
+		mirror: false // whether note is on right side of stem
+	}
+	*/
+	var that = {}, // and other private inst vars;
+	my = my || Drawable(),
+	stem, stemDirection;
+	
+	that.draw = function(x,y) {
+		var ctx = Music.context;
+		
+		var radius = 6;
+		
+		ctx.beginPath();
+		ctx.arc(x, y, radius, 0, Math.PI * 2, true);
+		ctx.fill();
+		
+		if (stem) stem.draw(x + (stemDirection > 0 ? radius : -radius), y);
+	};
+	
+	// Should we put stem in "stem-up" or "stem-down" slot?
+	that.stemUp = function() {
+		stem = Stem(1);
+		stemDirection = 1;
+	};
+	that.stemDown = function() {
+		stem = Stem(-1);
+		stemDirection = -1;
+	};
+	
+	return that;
+};
+
+// Voice contains stem direction specifier
+
+/*
+Staff's slots need to calculate whether there's a note in the slot above or below on staff ... need to change note direction if so, to left or right of stem
+*/
+
+// Really trying to separate music-details from drawing details
+/*
+HIERARCHY
+
+Score
+StaffGroup
+Staff
+Voice
+Measure
+Note
+*/
+
+
+var drawing = function(name, x, y) {
+	console.log(name + " at " + x + ',' + y);
+};
+
+// need child function to be publicly available
+// draw private
+
+var Draw = function() {
+	var that = {},
+		children = {};
+	
+	
+	that.child = function(type, child) {
+		if (!children[type]) children[type] = [];
+		children[type].push(child);
+	};
+	
+	that.draw = function(context, x, y) {
+		var a;
+		for (var i in children) {
+			if (!children.hasOwnProperty(i)) continue;
+			var childs = children[ i ];
+			for (var j = 0; j < childs.length; j++) {
+				a = childs[ j ].draw(context, x, y);
+				// a might contain information crucial to updating the drawing position
+			}
+		}
+	};
+	return that;
+};
+
+var Score = function(width, height) {
+	var that = {},
+		my = Draw();
+	
+	that.child = my.child; // make child public
+	
+	that.draw = function(ctx, x, y) {
+		drawing('Score', x, y);
+		// Me specific drawing
+		ctx.beginPath();
+		ctx.arc(x + 5, y + 5, 5, 0, Math.PI * 2, true);
+		ctx.fill();
+		// Position update
+		my.draw(ctx, x + 10, y + 10);
+	};
+	
+	return that;
+};
+
+var StaffGroup = function(score) {
+	var that = {},
+		my = Draw();
+		
+	that.child = my.child; // make child public
+	
+	score.child('staff-group', that);
+	
+	that.draw = function(ctx, x, y) {
+		drawing('StaffGroup', x, y);
+		// Me specific drawing
+
+		ctx.fillRect(x, y, 1, (4*12));
+		// Draw children relative to
+		my.draw(ctx, x, y);
+	};
+	
+	return that;
+};
+
+var Staff = function(staffGroup) {
+	var that = {},
+		my = Draw(),
+		position = {
+			x: 0,
+			y: 0,
+			width: 12,
+			height: 12
+		},
+		yNotes = {}, // note names and offsets from top left coordinates
+		
+		i,j;
+		
+	// Treble has how many octaves?
+	var init = function() {
+		var i = 2;
+		// start at F
+		var notes = 'f,e,d,c,b,a,g'.split(',');
+		var y = 0;
+		for (i; i > 0; i--) {
+			for (j = 0; j < notes.length; j++) {
+				yNotes[ notes[j] + i ] = y;
+				y += 6;
+			}
+		}
+	};
+	init();
+	
+	that.child = my.child; // make child public
+	
+	staffGroup.child('staff', that);
+
+	that.draw = function(context, x, y) {
+		drawing('Staff', x, y);
+		// just draw the lines
+		// flat hierarchy, so notes are concerned with drawing themselves
+		var j = y;
+		for (var i = 0; i < 5; i++) {
+			context.fillRect(x, j, 200, 1);
+			
+			// 10 for each space and 1 for line?
+			j += 12;
+		}
+		
+		position.x = x;
+		position.y = y;
+		
+		my.draw(context, x, y);
+	};
+	
+	// Returns Y position for current note name
+	that.yNote = function(name) {
+		console.log(yNotes);
+		return position.y + yNotes[ name ];
+		
+	};
+	return that;
+};
+
+var Voice = function(staff) {
+	var that = {},
+		my = Draw(),
+		margin = 6;
+	
+
+	
+	that.child = my.child; // make child public
+	that.yNote = staff.yNote;
+
+	staff.child('voice', that);
+	
+	that.draw = function(context, x, y) {
+		drawing('Voice', x, y);
+		my.draw(context, x + margin, y);
+	};
+	return that;
+};
+
+// Voice first so we can pass in multiple notes
+var Note = function(voice, noteDuration) {
+	var that = {},
+		my = Draw(),
+		position = {
+			x: 0,
+			y: 0,
+			width: 12,
+			height: 12
+		},
+		notes = [],
+		margin = 10,
+		stem = !!stem;
+	
+	that.child = my.child; // make child public
+	voice.child('note', that);
+	
+	for (var i = 2; i < arguments.length; i++) {
+		notes.push( arguments[i] );
+	}
+	
+	that.duration = function() {
+		return noteDuration;
+	};
+	
+	that.draw = function(context, x, y) {
+		var ctx = context;
+		var radius = 6;
+
+		
+		// Get x position from Voice
+		// Get y position from Voice->Staff
+		
+		// notes should be ordered from lowest to highest, or direction of stem
+		for (var i = 0; i < notes.length; i++) {
+			var note = notes[ i ];
+			var a = x + radius,
+				b = y + radius;
+			b = voice.yNote( note );
+			
+			drawing(note, a, b);
+			ctx.beginPath();
+			ctx.arc(a, b, radius, 0, Math.PI * 2, true);
+			ctx.fill();
+			
+			// Update voice position via note duration
+		}
+		
+		
+		// Update position
+		position.x = x;
+		position.y = y;
+	};
+	
+	return that;
+};
+
+var stem = function() {
+	var that = {};
+	
+	that.draw = function(context, x, y) {
+		context.fillRect(x, i, width, 1);
+	};
+	return that;
+};
+
+
+
+
+var aScore = Score();
+var aStaffGroup = StaffGroup(aScore);
+var aStaff = Staff(aStaffGroup);
+//var aMeasure = Measure(aStaffGroup, 4, 4);
+var aVoice = Voice(aStaff);
+var aNote = Note(aVoice, 4, 'c2', 'a2');
+
+
+$(document).ready(function() {
+	var canvas = document.getElementById('tutorial');
+	var context;
+	if (canvas.getContext) {
+		context = canvas.getContext("2d");
+		
+		aScore.draw(context, 0, 0);
+	}
+});
+</script>
+</head>
+<body>
+	<canvas id="tutorial" width="700" height="700"></canvas>
+</body>
+</html>
