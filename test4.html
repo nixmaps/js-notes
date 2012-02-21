@@ -144,6 +144,13 @@ var Draw = function() {
 	var that = {},
 		children = {};
 	
+	that.position = {
+		x: 0,
+		y: 0
+	};
+	
+	that.update = function() {
+	};
 	
 	that.child = function(type, child) {
 		if (!children[type]) children[type] = [];
@@ -152,12 +159,14 @@ var Draw = function() {
 	
 	that.draw = function(context, x, y) {
 		var a;
+		that.position.x = x;
+		that.position.y = y;
 		for (var i in children) {
 			if (!children.hasOwnProperty(i)) continue;
 			var childs = children[ i ];
 			for (var j = 0; j < childs.length; j++) {
-				a = childs[ j ].draw(context, x, y);
-				// a might contain information crucial to updating the drawing position
+				childs[ j ].draw(context, that.position.x, that.position.y);
+				that.update(); // update that.position.x or y
 			}
 		}
 	};
@@ -267,7 +276,11 @@ var Voice = function(staff) {
 		my = Draw(),
 		margin = 6;
 	
-
+	// to be called after each child is drawn
+	my.update = function() {
+		// margin should be related to child's duration
+		my.position.x += 12 + margin;
+	};
 	
 	that.child = my.child; // make child public
 	that.yNote = staff.yNote;
@@ -356,6 +369,7 @@ var aStaff = Staff(aStaffGroup);
 //var aMeasure = Measure(aStaffGroup, 4, 4);
 var aVoice = Voice(aStaff);
 var aNote = Note(aVoice, 4, 'c2', 'a2');
+var bNote = Note(aVoice, 4, 'd2');
 
 
 $(document).ready(function() {
