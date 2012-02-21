@@ -58,6 +58,13 @@ if (!Array.prototype.map) {
 	
 	- don't want the concept of children and parents ... bet i can do it with pubsub or another pattern
 */
+
+/*
+slots might not work ... anchor positions might be better.
+- note anchors it's y-center to the y coord staff gives it for the note name
+- stem anchors to 
+	note.anchor('stem', 'right', 'top', 0, 4); // notes know that stem objects are anchored to top-right, but down 4 pixels
+*/
 var Drawing = {
 
 	drawable: function(spec, my) {
@@ -113,14 +120,29 @@ var Drawing = {
 var Music = {
 
 	// ALMOST AS IF staff() need be the only -- or one of very few -- publicly available methods
+	
+	// staff group
+	group: function(spec, callback) {
+		// copy in boilerplate
+		
+		callback.apply(that, []);
+		return that;
+	},
+	
+	// if staff called directly, creates a simple staff group
 	staff: function(type, my) {
 		var that = {}, // and other private inst vars;
 		my = my || Drawing.drawable(),
+		
+		positions = {},
 	
 		// sanitize, copy and protect values from spec
 		clef = (type == 'treble' ? 'treble' : 'treble'), // default to treble ... need an object for each clef type, since they have their own drawing offsets
 		measures = [] // measure objects ... each has voices
 		;
+		
+		// initialize measure position coordinates
+		positions['measure'] = {x: 0, y: 0};
 
 		// base on spec (clef), set up slots
 		if (clef == 'treble') {
@@ -131,15 +153,21 @@ var Music = {
 			for (var key in a) {
 				var value = a[key];
 				// closure?
-				my.slot('c', {
-					y: i,
-					y1: i+10
-				});
+				positions[value] = {
+					// x value should come from measure
+					y1: i,
+					y2: i+10
+				};
 				// 10 for each space and 1 for line?
 				i += 11;
 				i += 1;
 			}
 		}
+		
+		// returns coordinates
+		that.position = function(name) {
+			return positions[name];
+		};
 	
 		that.draw = function(coords) {
 			var i,x,y;
@@ -153,15 +181,19 @@ var Music = {
 			measures.each(function(measure) {
 				var width = measure.needWidth(); // how much width does this measure need
 				// extend the lines to that width
-				measure.draw({
-					x: x,
-					y: y
-				});
+				// pass in a way for measure to use staff to map a position name to a coordinate
+				measure.draw(that.position('measure'), that);
+				
+				// draw measure lines
+				
 				// what about lines for a specific note above or below the stave?
 				// advance x AND/OR y how?
 				x += width;
 				// measure start/end lines
 				x += 1;
+				
+				// advance positions
+				positions['measure'].x += width + 1;
 			});
 		};
 		
@@ -185,7 +217,7 @@ var Music = {
 	*/
 	measure: function(spec, my) {
 		var that = {}, // and other private inst vars;
-		my = my || Drawing.drawable(),
+		my = Drawing.drawable(),
 		spec = spec || {},
 	
 		beats = spec.beats || 4,
@@ -221,6 +253,9 @@ var Music = {
 			});
 			return width;
 		};
+		/*
+		measure needs to somehow inherit the Y position assignment functionality from staff
+		*/
 		that.draw = function(coords) {
 			var i,x,y;
 			coords = coords || {};
@@ -228,6 +263,18 @@ var Music = {
 			y = coords.y || 0;
 			// draw lines
 			console.log('Drawing measure at ' + x + ',' + y);
+			notes.each(function(value) {
+				// get note name
+				// get draw position from staff
+				// is this coordinate to be used as top-left, center, what?
+				// would be easier for staff to report x value and y1,y2 range?
+				var width = value.needWidth();
+				var name = value.name(); // get note name
+				// get y1 and y2 from staff
+				var coord = my.position(name);
+				// need to get note x position from measure itself
+				value.draw();
+			});
 		};
 		
 		
@@ -280,20 +327,20 @@ var Music = {
 	note: function(spec, my) {
 		var that = {}, // and other private inst vars;
 		my = my || Drawing.drawable(),
-		
-		// from spec
-		name = spec.name || 'c', // might not need this here ... it's also used when a note is added to a slot
-		duration = spec.duration || 1, // fraction of a beat?
-		up = spec.up || false,
 
 		stem, // 0:no, 1:up, 2:down
 		beamed = false, // beam type determined by note duration
 		tuplet = 0 // 0:no, 1:start, 2:stop
 		;
+		
+		// from spec
+		spec.name = spec.name || 'c'; // might not need this here ... it's also used when a note is added to a slot
+		spec.duration = spec.duration || 1; // fraction of a beat?
+		spec.up = spec.up || false;
 	
 		// share variables and function to my
-		if (duration > 1) {
-			stem = (up ? 1 : 2);
+		if (spec.duration > 1) {
+			stem = (spec.up ? 1 : 2);
 		}
 	
 		// a stem slot so we can anchor beams to it somehow
@@ -308,6 +355,11 @@ var Music = {
 		that.needWidth = function() {
 			// depends on the font
 			return 20;
+		};
+		
+		// note-specific methods
+		that.name() {
+			return spec.name;
 		};
 	
 		return that;
