@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<script type="text/javascript">
+/*
+Function.prototype.method = function(name, func) {
+	if (this.prototype[name]) {
+		console.error('Method already present');
+		return;
+	}
+	this.prototype[name] = func;
+	return this;
+};
+*/
+
+Music = {
+	context: null
+};
+
+var Drawable = function(spec, my) {
+	var that = {}, // and other private inst vars;
+	my = my || {}
+	;
+	
+	// Need to implement this in each derived object
+	//that.draw = function(x, y) {
+	//};
+	
+	return that;
+};
+
+// Slots are an abstract way of calculating where to draw items relative to ourself
+var Slotted = function(spec, my) {
+	var that = {}, // and other private inst vars;
+	my = my || {},
+	slots = {}
+	;
+	
+	// Create slot
+	that.slot = function(name, f) {
+		slots[ name ] = f;
+	};
+	// Add object to slot
+	
+	
+	return that;
+};
+
+// These are Drawable
+
+var Stem = function(up, my) {
+	var that = {}, // and other private inst vars;
+	my = my || Drawable(),
+	direction = (up > 0 ? 1 : -1);
+	
+	that.draw = function(x,y) {
+		var ctx = Music.context;
+		
+		ctx.fillRect(x, y, 1, -30 * direction);
+	};
+	
+	return that;
+};
+
+// Also, notes will need a direction too ... to left or right of stem
+// Hmm
+var Note = function(spec, my) {
+	/*
+	spec = {
+		duration: 1, // is whole note
+		mirror: false // whether note is on right side of stem
+	}
+	*/
+	var that = {}, // and other private inst vars;
+	my = my || Drawable(),
+	stem, stemDirection;
+	
+	that.draw = function(x,y) {
+		var ctx = Music.context;
+		
+		var radius = 6;
+		
+		ctx.beginPath();
+		ctx.arc(x, y, radius, 0, Math.PI * 2, true);
+		ctx.fill();
+		
+		if (stem) stem.draw(x + (stemDirection > 0 ? radius : -radius), y);
+	};
+	
+	// Should we put stem in "stem-up" or "stem-down" slot?
+	that.stemUp = function() {
+		stem = Stem(1);
+		stemDirection = 1;
+	};
+	that.stemDown = function() {
+		stem = Stem(-1);
+		stemDirection = -1;
+	};
+	
+	return that;
+};
+
+/*
+Staff's slots need to calculate whether there's a note in the slot above or below on staff ... need to change note direction if so, to left or right of stem
+*/
+var Staff = function(spec, my) {
+	/*
+	spec = {
+		duration: 1, // is whole note
+		mirror: false // whether note is on right side of stem
+	}
+	*/
+	var that = {}, // and other private inst vars;
+	my = my || Drawable();
+	
+	my = Slotted(my);
+	
+	// what is treble clef range?
+	// loop over possible notes, skipping space where staff lines will be
+	var a = 'g,f,e,d,b,c,a'.split(',');
+	var i = 0;
+	for (var key in a) {
+		var value = a[key];
+		// closure?
+		my.slot('c', {
+			y: i,
+			y1: i+10
+		});
+		// 10 for each space and 1 for line?
+		i += 11;
+		i += 1;
+	}
+	
+	that.draw = function(x, y, width, height) {
+		var ctx = Music.context;
+		var a = 'g,f,e,d,b,c,a'.split(',');
+		var i = y;
+		for (var key in a) {
+			var value = a[key];
+			
+			ctx.fillRect(x, i, width, 1);
+			
+			// 10 for each space and 1 for line?
+			i += 12;
+		}
+	};
+	
+	// Need the ability to draw partial lines above or below the staff too
+	
+	return that;
+};
+
+
+
+$(document).ready(function() {
+	var canvas = document.getElementById('tutorial');
+	if (canvas.getContext) {
+		Music.context = canvas.getContext("2d");
+		
+		// Note needs to get "slot" position from Staff
+		/*
+		var n = Note();
+		n.stemUp();
+		// How should we tell the note which stem to use, and where?
+		n.draw(50,50);
+		*/
+		
+		var s = Staff();
+		s.draw(10, 10, 100, 100);
+	}
+});
+</script>
+</head>
+<body>
+	<canvas id="tutorial" width="150" height="150"></canvas>
+</body>
+</html>
