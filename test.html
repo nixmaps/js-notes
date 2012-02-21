@@ -101,6 +101,10 @@ var Note = function(spec, my) {
 	return that;
 };
 
+// Voice contains stem direction specifier
+var Voice = function(spec, my) {
+};
+
 /*
 Staff's slots need to calculate whether there's a note in the slot above or below on staff ... need to change note direction if so, to left or right of stem
 */
@@ -123,7 +127,7 @@ var Staff = function(spec, my) {
 	for (var key in a) {
 		var value = a[key];
 		// closure?
-		my.slot('c', {
+		my.slot(value, {
 			y: i,
 			y1: i+10
 		});
@@ -132,7 +136,8 @@ var Staff = function(spec, my) {
 		i += 1;
 	}
 	
-	that.draw = function(x, y, width, height) {
+	// measures will be how many measures to stop at
+	that.draw = function(x, y, width, measures) {
 		var ctx = Music.context;
 		var a = 'g,f,e,d,b,c,a'.split(',');
 		var i = y;
@@ -144,6 +149,9 @@ var Staff = function(spec, my) {
 			// 10 for each space and 1 for line?
 			i += 12;
 		}
+		
+		// Go through voices and draw now
+		
 	};
 	
 	// Need the ability to draw partial lines above or below the staff too
@@ -151,7 +159,16 @@ var Staff = function(spec, my) {
 	return that;
 };
 
+// Really trying to separate music-details from drawing details
+/*
+HIERARCHY
 
+StaffGroup
+Staff
+Voice
+Measure
+Note
+*/
 
 $(document).ready(function() {
 	var canvas = document.getElementById('tutorial');
@@ -167,12 +184,13 @@ $(document).ready(function() {
 		*/
 		
 		var s = Staff();
-		s.draw(10, 10, 100, 100);
+		
+		s.draw(10, 10, 600, 400);
 	}
 });
 </script>
 </head>
 <body>
-	<canvas id="tutorial" width="150" height="150"></canvas>
+	<canvas id="tutorial" width="700" height="700"></canvas>
 </body>
 </html>

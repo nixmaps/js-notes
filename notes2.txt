@@ -1,0 +1,25 @@
+Score object
+- has to figure out how much space it needs for title and padding first, before drawing staff
+- all along it knows how much width it has to work with
+
+- slots are drawing in the order they're added?
+	- title slot spans top
+		- split into temp, title, author, subtitle, etc
+	
+When it gets to StaffGroups
+- tells StaffGroup to start drawing at X
+- recurses, calculating how much it can fit comfortably in that width
+	- goes down to Voices
+		- then measures
+			- then notes
+	- if it starts drawing something that will push past the given width, it backs out, somehow making note of the last measure that was successful
+- then it somehow starts drawing again, specifying that it should space things out more, but we can do that later
+
+- needs to know where to start, width we have, and whether to stop after X measures
+
+
+
+QUESTIONS
+
+- would it benefit us to flatten the tree when drawing?
+- condense all slots, and objects, use predictable names so we have less message passing going on.
