@@ -26,94 +26,6 @@ if (!Function.prototype.curry) {
         };
 }
 
-
-Music = {
-	context: null
-};
-
-var Drawable = function(spec, my) {
-	var that = {}, // and other private inst vars;
-	my = my || {}
-	;
-	
-	// Need to implement this in each derived object
-	//that.draw = function(x, y) {
-	//};
-	
-	return that;
-};
-
-// Slots are an abstract way of calculating where to draw items relative to ourself
-var Slotted = function(spec, my) {
-	var that = {}, // and other private inst vars;
-	my = my || {},
-	slots = {}
-	;
-	
-	// Create slot
-	that.slot = function(name, f) {
-		slots[ name ] = f;
-	};
-	// Add object to slot
-	
-	
-	return that;
-};
-
-// These are Drawable
-
-var Stem = function(up, my) {
-	var that = {}, // and other private inst vars;
-	my = my || Drawable(),
-	direction = (up > 0 ? 1 : -1);
-	
-	that.draw = function(x,y) {
-		var ctx = Music.context;
-		
-		ctx.fillRect(x, y, 1, -30 * direction);
-	};
-	
-	return that;
-};
-
-// Also, notes will need a direction too ... to left or right of stem
-// Hmm
-var Note = function(spec, my) {
-	/*
-	spec = {
-		duration: 1, // is whole note
-		mirror: false // whether note is on right side of stem
-	}
-	*/
-	var that = {}, // and other private inst vars;
-	my = my || Drawable(),
-	stem, stemDirection;
-	
-	that.draw = function(x,y) {
-		var ctx = Music.context;
-		
-		var radius = 6;
-		
-		ctx.beginPath();
-		ctx.arc(x, y, radius, 0, Math.PI * 2, true);
-		ctx.fill();
-		
-		if (stem) stem.draw(x + (stemDirection > 0 ? radius : -radius), y);
-	};
-	
-	// Should we put stem in "stem-up" or "stem-down" slot?
-	that.stemUp = function() {
-		stem = Stem(1);
-		stemDirection = 1;
-	};
-	that.stemDown = function() {
-		stem = Stem(-1);
-		stemDirection = -1;
-	};
-	
-	return that;
-};
-
 // Voice contains stem direction specifier
 
 /*
@@ -352,8 +264,11 @@ var Note = function(voice, noteDuration) {
 	return that;
 };
 
-var stem = function() {
-	var that = {};
+var Stem = function() {
+	var that = {},
+		my = Draw();
+		
+	that.child = my.child;
 	
 	that.draw = function(context, x, y) {
 		context.fillRect(x, i, width, 1);
