@@ -165,8 +165,9 @@ var Draw = function() {
 			if (!children.hasOwnProperty(i)) continue;
 			var childs = children[ i ];
 			for (var j = 0; j < childs.length; j++) {
-				childs[ j ].draw(context, that.position.x, that.position.y);
-				that.update(); // update that.position.x or y
+				var child = childs[ j ];
+				child.draw(context, that.position.x, that.position.y);
+				that.update(child); // update that.position.x or y
 			}
 		}
 	};
@@ -277,7 +278,7 @@ var Voice = function(staff) {
 		margin = 6;
 	
 	// to be called after each child is drawn
-	my.update = function() {
+	my.update = function(child) {
 		// margin should be related to child's duration
 		my.position.x += 12 + margin;
 	};
@@ -367,6 +368,10 @@ var aScore = Score();
 var aStaffGroup = StaffGroup(aScore);
 var aStaff = Staff(aStaffGroup);
 //var aMeasure = Measure(aStaffGroup, 4, 4);
+/*
+when i do add measure support, get max num of notes per beat in the measure, use it to calculate approx measure width.
+then store "width per beat" and use note duration as a fraction of this beat width to determine next x in Voice.update()
+*/
 var aVoice = Voice(aStaff);
 var aNote = Note(aVoice, 4, 'c2', 'a2');
 var bNote = Note(aVoice, 4, 'd2');
